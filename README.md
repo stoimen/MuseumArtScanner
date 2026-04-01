@@ -1,112 +1,112 @@
 # MuseumArtScanner
 
-Eine React Native-App mit Expo, die es Ihnen ermöglicht, Gemälde in Museen mit der Kamera zu scannen. Die App verwendet ChatGPT (OpenAI), um den Autor und Informationen über das Kunstwerk zu identifizieren, und kann die Ergebnisse vorlesen lassen.
+A React Native app built with Expo that lets you scan paintings in museums using your camera. The app uses ChatGPT (OpenAI) to identify the artist and provide information about the artwork, and it can read the results aloud.
 
-## Funktionen
+## Features
 
-- **Kamera-Scan**: Fotografieren Sie Gemälde mit der integrierten Kamera.
-- **KI-Analyse**: Senden Sie das Bild an OpenAI, um Details über den Autor und das Kunstwerk zu erhalten.
-- **Vorlesen**: Hören Sie die Informationen per Text-to-Speech an, während Sie durch das Museum gehen.
-- **Einfach zu bedienen**: Geben Sie Ihren OpenAI-API-Schlüssel ein und starten Sie den Scan.
+- **Camera scan**: Take photos of paintings with the built-in camera.
+- **AI analysis**: Send the image to OpenAI to get details about the artist and the artwork.
+- **Read aloud**: Listen to the information via text-to-speech while walking through the museum.
+- **Easy to use**: Enter your OpenAI API key and start scanning.
 
-## Voraussetzungen
+## Prerequisites
 
-- Node.js (Version 18 oder höher)
-- npm oder yarn
+- Node.js (version 18 or newer)
+- npm or yarn
 - Expo CLI (`npm install -g @expo/cli`)
-- Ein OpenAI-API-Schlüssel (erhalten Sie ihn von [OpenAI Platform](https://platform.openai.com/))
-- Für iOS: macOS mit Xcode (für lokale Builds) oder EAS CLI für Cloud-Builds
-- Für Android: Android Studio oder EAS CLI
+- An OpenAI API key (get one from [OpenAI Platform](https://platform.openai.com/))
+- For iOS: macOS with Xcode (for local builds) or EAS CLI for cloud builds
+- For Android: Android Studio or EAS CLI
 
 ## Installation
 
-1. Klonen oder navigieren Sie zum Projektverzeichnis:
+1. Clone the repository or navigate to the project directory:
    ```
    cd /path/to/MuseumArtScanner
    ```
 
-2. Installieren Sie die Abhängigkeiten:
+2. Install dependencies:
    ```
    npm install
    ```
 
-3. Installieren Sie zusätzliche Pakete (falls nicht bereits geschehen):
+3. Install additional packages (if not already installed):
    ```
    npx expo install expo-camera expo-speech openai expo-file-system
    ```
 
-## Ausführen der App
+## Running the app
 
-1. Starten Sie den Expo-Entwicklungsserver:
+1. Start the Expo development server:
    ```
    npm start
    ```
 
-2. Öffnen Sie die App auf Ihrem Gerät:
-   - **iOS**: Installieren Sie die Expo Go-App aus dem App Store. Scannen Sie den QR-Code im Terminal.
-   - **Android**: Installieren Sie Expo Go aus dem Google Play Store. Scannen Sie den QR-Code.
+2. Open the app on your device:
+   - **iOS**: Install the Expo Go app from the App Store. Scan the QR code shown in the terminal.
+   - **Android**: Install Expo Go from the Google Play Store. Scan the QR code.
 
-3. Geben Sie Ihren OpenAI-API-Schlüssel in der App ein.
+3. Enter your OpenAI API key in the app.
 
-4. Testen Sie die Funktionen: Nehmen Sie ein Foto auf und lassen Sie die Analyse durchführen.
+4. Test the functionality: take a photo and run the analysis.
 
-## Testen
+## Testing
 
-- **Entwicklung**: Verwenden Sie Expo Go für schnelle Tests auf Ihrem Gerät.
+- **Development**: Use Expo Go for quick testing on your device.
 - **Simulator/Emulator**:
-  - iOS: `npm run ios` (erfordert macOS und Xcode)
-  - Android: `npm run android` (erfordert Android Studio)
-- **Unit-Tests**: Fügen Sie Tests mit Jest hinzu (Expo unterstützt Jest standardmäßig). Führen Sie `npm test` aus.
-- **Manuelle Tests**: Testen Sie Kamera-Berechtigungen, API-Aufrufe und Vorlesen auf verschiedenen Geräten.
+  - iOS: `npm run ios` (requires macOS and Xcode)
+  - Android: `npm run android` (requires Android Studio)
+- **Unit tests**: Add tests with Jest (Expo supports Jest by default). Run `npm test`.
+- **Manual testing**: Test camera permissions, API calls, and text-to-speech on different devices.
 
-## Installation auf iPhone
+## Installation on iPhone
 
-### Option 1: Expo Go (empfohlen für Tests)
-1. Installieren Sie Expo Go auf Ihrem iPhone.
-2. Starten Sie `npm start` und scannen Sie den QR-Code.
+### Option 1: Expo Go (recommended for testing)
+1. Install Expo Go on your iPhone.
+2. Run `npm start` and scan the QR code.
 
-### Option 2: Native Build mit EAS (für Produktion)
-1. Installieren Sie EAS CLI:
+### Option 2: Native build with EAS (for production)
+1. Install EAS CLI:
    ```
    npm install -g eas-cli
    ```
 
-2. Melden Sie sich bei Expo an:
+2. Log in to Expo:
    ```
    eas login
    ```
 
-3. Bauen Sie die iOS-App:
+3. Build the iOS app:
    ```
    eas build --platform ios
    ```
 
-4. Laden Sie die IPA-Datei herunter und installieren Sie sie auf Ihrem iPhone (erfordert ein Apple Developer-Konto für die Verteilung).
+4. Download the IPA file and install it on your iPhone (requires an Apple Developer account for distribution).
 
-## Installation auf Android
+## Installation on Android
 
-### Option 1: Expo Go (empfohlen für Tests)
-1. Installieren Sie Expo Go auf Ihrem Android-Gerät.
-2. Starten Sie `npm start` und scannen Sie den QR-Code.
+### Option 1: Expo Go (recommended for testing)
+1. Install Expo Go on your Android device.
+2. Run `npm start` and scan the QR code.
 
-### Option 2: Native Build mit EAS (für Produktion)
-1. Installieren Sie EAS CLI (falls nicht bereits geschehen).
-2. Melden Sie sich bei Expo an (falls nicht bereits geschehen).
-3. Bauen Sie die Android-App:
+### Option 2: Native build with EAS (for production)
+1. Install EAS CLI (if not already installed).
+2. Log in to Expo (if not already done).
+3. Build the Android app:
    ```
    eas build --platform android
    ```
 
-4. Laden Sie die APK-Datei herunter und installieren Sie sie auf Ihrem Android-Gerät.
+4. Download the APK file and install it on your Android device.
 
-## Hinweise
+## Notes
 
-- **API-Schlüssel**: Speichern Sie Ihren OpenAI-API-Schlüssel sicher. Die App verwendet ihn für API-Aufrufe.
-- **Kosten**: OpenAI-API-Aufrufe kosten Geld – überwachen Sie Ihr Guthaben.
-- **Berechtigungen**: Stellen Sie sicher, dass Kamera-Berechtigungen in den Geräte-Einstellungen erteilt sind.
-- **Fehlerbehebung**: Bei Problemen überprüfen Sie die Expo-Dokumentation oder die Logs im Terminal.
-- **Anpassungen**: Der Code ist in `App.js`. Sie können ihn erweitern, z.B. um Offline-Modi oder zusätzliche Sprachen.
+- **API key**: Store your OpenAI API key securely. The app uses it for API calls.
+- **Costs**: OpenAI API calls cost money—monitor your usage and billing.
+- **Permissions**: Make sure camera permissions are granted in your device settings.
+- **Troubleshooting**: If something fails, check the Expo documentation or the terminal logs.
+- **Customization**: The code is in `App.js`. You can extend it, for example with offline modes or additional languages.
 
-## Lizenz
+## License
 
-Dieses Projekt ist unter der MIT-Lizenz lizenziert.
+This project is licensed under the MIT License.

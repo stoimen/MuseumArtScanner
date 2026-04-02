@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Text, View, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Speech from 'expo-speech';
 import OpenAI from 'openai';
@@ -18,42 +18,54 @@ export default function App() {
     if (permission && !permission.granted) {
       requestPermission();
     }
-  }, [permission]);
+  }, [permission, requestPermission]);
 
-  const takePhoto = async () => {
-    if (cameraRef.current) {
-      const photoData = await cameraRef.current.takePictureAsync({ base64: true });
-      setPhoto(photoData);
-      analyzeImage(photoData.base64);
-    }
-  };
-
-  const analyzeImage = async (base64Image) => {
+  const analyzeImage = async (base64Image: string) => {
     if (!apiKey) {
       Alert.alert('Error', 'Please enter your OpenAI API key');
       return;
     }
+
     setLoading(true);
+
     try {
       const openai = new OpenAI({ apiKey });
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini', // or gpt-4-vision-preview if available
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'user',
             content: [
               { type: 'text', text: ARTWORK_ANALYSIS_PROMPT },
-              { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
-            ]
-          }
+              { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } },
+            ],
+          },
         ],
-        max_tokens: 500
+        max_tokens: 500,
       });
-      setResult(response.choices[0].message.content);
+
+      setResult(response.choices[0]?.message?.content ?? 'No analysis was returned.');
     } catch (error) {
-      Alert.alert('Error', 'Failed to analyze image: ' + error.message);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      Alert.alert('Error', `Failed to analyze image: ${message}`);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const takePhoto = async () => {
+    if (!cameraRef.current) {
+      return;
+    }
+
+    const photoData = await cameraRef.current.takePictureAsync({ base64: true });
+    setPhoto(photoData);
+
+    if (photoData.base64) {
+      await analyzeImage(photoData.base64);
+    } else {
+      Alert.alert('Error', 'Photo was captured without image data. Please try again.');
+    }
   };
 
   const speakResult = () => {
@@ -63,11 +75,19 @@ export default function App() {
   };
 
   if (!permission) {
-    return <View style={styles.container}><Text>Requesting camera permission...</Text></View>;
+    return (
+      <View style={styles.container}>
+        <Text>Requesting camera permission...</Text>
+      </View>
+    );
   }
 
   if (!permission.granted) {
-    return <View style={styles.container}><Text>Camera permission denied</Text></View>;
+    return (
+      <View style={styles.container}>
+        <Text>Camera permission denied</Text>
+      </View>
+    );
   }
 
   return (
@@ -97,7 +117,13 @@ export default function App() {
               <TouchableOpacity style={styles.button} onPress={speakResult}>
                 <Text style={styles.buttonText}>Read Aloud</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.button} onPress={() => { setPhoto(null); setResult(''); }}>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => {
+                  setPhoto(null);
+                  setResult('');
+                }}
+              >
                 <Text style={styles.buttonText}>Scan Another</Text>
               </TouchableOpacity>
             </>

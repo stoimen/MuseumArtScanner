@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
+import { Text, View, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Speech from 'expo-speech';
 import OpenAI from 'openai';
-import * as FileSystem from 'expo-file-system';
+import styles from './styles';
+import { ARTWORK_ANALYSIS_PROMPT } from './prompts';
 
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -41,7 +42,7 @@ export default function App() {
           {
             role: 'user',
             content: [
-              { type: 'text', text: 'Describe this painting, identify the author if possible, and provide some interesting information about the artwork.' },
+              { type: 'text', text: ARTWORK_ANALYSIS_PROMPT },
               { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
             ]
           }
@@ -106,54 +107,3 @@ export default function App() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    width: '80%',
-    marginBottom: 20,
-    paddingHorizontal: 10,
-  },
-  cameraContainer: {
-    flex: 1,
-    width: '100%',
-  },
-  camera: {
-    flex: 1,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    padding: 15,
-    borderRadius: 5,
-    margin: 10,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  resultContainer: {
-    flex: 1,
-    alignItems: 'center',
-    width: '100%',
-  },
-  image: {
-    width: 200,
-    height: 200,
-    marginBottom: 20,
-  },
-  resultText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginHorizontal: 20,
-    marginBottom: 20,
-  },
-});

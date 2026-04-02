@@ -105,7 +105,7 @@ A React Native app built with Expo that lets you scan paintings in museums using
 - **Costs**: OpenAI API calls cost money—monitor your usage and billing.
 - **Permissions**: Make sure camera permissions are granted in your device settings.
 - **Troubleshooting**: If something fails, check the Expo documentation or the terminal logs.
-- **Customization**: The code is in `App.js`. You can extend it, for example with offline modes or additional languages.
+- **Customization**: The code is in `App.tsx`. You can extend it, for example with offline modes or additional languages.
 
 ## License
 

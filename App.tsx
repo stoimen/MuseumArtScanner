@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Text, TouchableOpacity, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Speech from 'expo-speech';
 import OpenAI from 'openai';
 import styles from './styles';
 import { ARTWORK_ANALYSIS_PROMPT } from './prompts';
 
+const OPENAI_API_KEY = (process.env.OPENAI_API_KEY ?? '').trim();
+
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
-  const [apiKey, setApiKey] = useState('');
   const [photo, setPhoto] = useState(null);
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,15 +22,18 @@ export default function App() {
   }, [permission, requestPermission]);
 
   const analyzeImage = async (base64Image: string) => {
-    if (!apiKey) {
-      Alert.alert('Error', 'Please enter your OpenAI API key');
+    if (!OPENAI_API_KEY) {
+      Alert.alert(
+        'Error',
+        'Missing OpenAI API key. Set OPENAI_API_KEY before starting the app.',
+      );
       return;
     }
 
     setLoading(true);
 
     try {
-      const openai = new OpenAI({ apiKey });
+      const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
@@ -92,13 +96,6 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter OpenAI API Key"
-        value={apiKey}
-        onChangeText={setApiKey}
-        secureTextEntry
-      />
       {!photo ? (
         <View style={styles.cameraContainer}>
           <CameraView style={styles.camera} ref={cameraRef} />

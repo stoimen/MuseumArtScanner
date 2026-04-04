@@ -7,7 +7,7 @@ A React Native app built with Expo that lets you scan paintings in museums using
 - **Camera scan**: Take photos of paintings with the built-in camera.
 - **AI analysis**: Send the image to OpenAI to get details about the artist and the artwork.
 - **Read aloud**: Listen to the information via text-to-speech while walking through the museum.
-- **Easy to use**: Enter your OpenAI API key and start scanning.
+- **Simple setup**: Configure your OpenAI API key once via environment variable (or fallback constant) and start scanning.
 
 ## Prerequisites
 
@@ -35,6 +35,11 @@ A React Native app built with Expo that lets you scan paintings in museums using
    npx expo install expo-camera expo-speech openai expo-file-system
    ```
 
+4. Configure your API key:
+   ```
+   export OPENAI_API_KEY="sk-..."
+   ```
+
 ## Running the app
 
 1. Start the Expo development server:
@@ -46,9 +51,7 @@ A React Native app built with Expo that lets you scan paintings in museums using
    - **iOS**: Install the Expo Go app from the App Store. Scan the QR code shown in the terminal.
    - **Android**: Install Expo Go from the Google Play Store. Scan the QR code.
 
-3. Enter your OpenAI API key in the app.
-
-4. Test the functionality: take a photo and run the analysis.
+3. Test the functionality: take a photo and run the analysis.
 
 ## Testing
 

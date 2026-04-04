@@ -1,20 +1,20 @@
 # MuseumArtScanner
 
-A React Native app built with Expo that lets you scan paintings in museums using your camera. The app uses ChatGPT (OpenAI) to identify the artist and provide information about the artwork, and it can read the results aloud.
+A React Native app built with Expo that lets you scan paintings in museums using your camera. The app uses a pluggable AI provider layer (currently OpenAI) to identify the artist and provide information about the artwork, and it can read the results aloud.
 
 ## Features
 
 - **Camera scan**: Take photos of paintings with the built-in camera.
-- **AI analysis**: Send the image to OpenAI to get details about the artist and the artwork.
+- **AI analysis**: Send the image to the configured AI provider to get details about the artist and the artwork.
 - **Read aloud**: Listen to the information via text-to-speech while walking through the museum.
-- **Simple setup**: Configure your OpenAI API key once via environment variable (or fallback constant) and start scanning.
+- **Simple setup**: Configure your AI provider via environment variables and start scanning.
 
 ## Prerequisites
 
 - Node.js (version 18 or newer)
 - npm or yarn
 - Expo CLI (`npm install -g @expo/cli`)
-- An OpenAI API key (get one from [OpenAI Platform](https://platform.openai.com/))
+- For OpenAI: an API key (get one from [OpenAI Platform](https://platform.openai.com/))
 - For iOS: macOS with Xcode (for local builds) or EAS CLI for cloud builds
 - For Android: Android Studio or EAS CLI
 
@@ -35,8 +35,9 @@ A React Native app built with Expo that lets you scan paintings in museums using
    npx expo install expo-camera expo-speech openai expo-file-system
    ```
 
-4. Configure your API key:
+4. Configure your AI provider:
    ```
+   export AI_PROVIDER="openai"
    export OPENAI_API_KEY="sk-..."
    ```
 
@@ -104,11 +105,11 @@ A React Native app built with Expo that lets you scan paintings in museums using
 
 ## Notes
 
-- **API key**: Store your OpenAI API key securely. The app uses it for API calls.
-- **Costs**: OpenAI API calls cost money—monitor your usage and billing.
+- **API key**: Store your provider API key securely. For OpenAI, use `OPENAI_API_KEY`.
+- **Costs**: AI provider API calls cost money—monitor your usage and billing.
 - **Permissions**: Make sure camera permissions are granted in your device settings.
 - **Troubleshooting**: If something fails, check the Expo documentation or the terminal logs.
-- **Customization**: The code is in `App.tsx`. You can extend it, for example with offline modes or additional languages.
+- **Customization**: You can add new AI providers by implementing the shared interface in `src/ai/` and wiring them in the provider factory.
 
 ## License
 

@@ -1,13 +1,14 @@
 # MuseumArtScanner
 
-A React Native app built with Expo that lets you scan paintings in museums using your camera. The app uses a pluggable AI provider layer (currently OpenAI) to identify the artist and provide information about the artwork, and it can read the results aloud.
+A React Native app built with Expo that lets you scan paintings in museums using your camera. The app uses a pluggable AI provider layer (OpenAI or Gemini) to identify the artist and provide information about the artwork, and it can read the results aloud.
 
 ## Features
 
 - **Camera scan**: Take photos of paintings with the built-in camera.
 - **AI analysis**: Send the image to the configured AI provider to get details about the artist and the artwork.
 - **Read aloud**: Listen to the information via text-to-speech while walking through the museum.
-- **Simple setup**: Configure your AI provider via environment variables and start scanning.
+- **Pluggable providers**: Switch between OpenAI and Gemini with environment variables.
+- **Simple setup**: Configure your AI provider and start scanning.
 
 ## Prerequisites
 
@@ -15,6 +16,7 @@ A React Native app built with Expo that lets you scan paintings in museums using
 - npm or yarn
 - Expo CLI (`npm install -g @expo/cli`)
 - For OpenAI: an API key (get one from [OpenAI Platform](https://platform.openai.com/))
+- For Gemini: a Google AI Studio API key (get one from [Google AI Studio](https://aistudio.google.com/app/apikey))
 - For iOS: macOS with Xcode (for local builds) or EAS CLI for cloud builds
 - For Android: Android Studio or EAS CLI
 
@@ -30,16 +32,48 @@ A React Native app built with Expo that lets you scan paintings in museums using
    npm install
    ```
 
-3. Install additional packages (if not already installed):
+3. Install additional Expo packages (if not already installed):
    ```
    npx expo install expo-camera expo-speech openai expo-file-system
    ```
 
-4. Configure your AI provider:
+4. Configure your AI provider.
+
+   **OpenAI**
    ```
    export AI_PROVIDER="openai"
    export OPENAI_API_KEY="sk-..."
    ```
+
+   **Gemini**
+   ```
+   export AI_PROVIDER="gemini"
+   export GEMINI_API_KEY="AIza..."
+   ```
+
+## Gemini API setup and credentials
+
+If you want to use Gemini, follow these steps:
+
+1. Go to [Google AI Studio](https://aistudio.google.com/) and sign in with your Google account.
+2. Open the API keys page: [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).
+3. Click **Create API key**.
+4. Copy the generated key and store it in your shell environment:
+   ```
+   export AI_PROVIDER="gemini"
+   export GEMINI_API_KEY="AIza..."
+   ```
+5. Start Expo from the same terminal session so the app can read the environment variables:
+   ```
+   npm start
+   ```
+
+### Credential safety tips
+
+- Do not commit keys to Git.
+- Rotate keys if they are exposed.
+- Use separate keys for development and production when possible.
+- Consider using EAS secrets or your CI/CD secret manager for build pipelines.
 
 ## Running the app
 
@@ -60,7 +94,7 @@ A React Native app built with Expo that lets you scan paintings in museums using
 - **Simulator/Emulator**:
   - iOS: `npm run ios` (requires macOS and Xcode)
   - Android: `npm run android` (requires Android Studio)
-- **Unit tests**: Add tests with Jest (Expo supports Jest by default). Run `npm test`.
+- **Type checks**: Run `npm run typecheck`.
 - **Manual testing**: Test camera permissions, API calls, and text-to-speech on different devices.
 
 ## Installation on iPhone
@@ -105,7 +139,10 @@ A React Native app built with Expo that lets you scan paintings in museums using
 
 ## Notes
 
-- **API key**: Store your provider API key securely. For OpenAI, use `OPENAI_API_KEY`.
+- **API keys**:
+  - OpenAI uses `OPENAI_API_KEY`
+  - Gemini uses `GEMINI_API_KEY`
+- **Provider selection**: Set `AI_PROVIDER` to either `openai` or `gemini`.
 - **Costs**: AI provider API calls cost money—monitor your usage and billing.
 - **Permissions**: Make sure camera permissions are granted in your device settings.
 - **Troubleshooting**: If something fails, check the Expo documentation or the terminal logs.

@@ -2,11 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Image, Text, TouchableOpacity, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Speech from 'expo-speech';
-import OpenAI from 'openai';
 import styles from './styles';
 import { ARTWORK_ANALYSIS_PROMPT } from './prompts';
-
-const OPENAI_API_KEY = (process.env.OPENAI_API_KEY ?? '').trim();
+import { getVisionClient } from './src/ai/clientFactory';
 
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -22,33 +20,16 @@ export default function App() {
   }, [permission, requestPermission]);
 
   const analyzeImage = async (base64Image: string) => {
-    if (!OPENAI_API_KEY) {
-      Alert.alert(
-        'Error',
-        'Missing OpenAI API key. Set OPENAI_API_KEY before starting the app.',
-      );
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: ARTWORK_ANALYSIS_PROMPT },
-              { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } },
-            ],
-          },
-        ],
-        max_tokens: 500,
+      const visionClient = getVisionClient();
+      const analysis = await visionClient.analyzeArtwork({
+        base64Image,
+        prompt: ARTWORK_ANALYSIS_PROMPT,
       });
 
-      setResult(response.choices[0]?.message?.content ?? 'No analysis was returned.');
+      setResult(analysis);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       Alert.alert('Error', `Failed to analyze image: ${message}`);

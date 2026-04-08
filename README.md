@@ -51,6 +51,24 @@ A React Native app built with Expo that lets you scan paintings in museums using
    export GEMINI_API_KEY="AIza..."
    ```
 
+## OpenAI API setup and credentials
+
+If you want to use OpenAI, follow these steps:
+
+1. Go to the [OpenAI Platform](https://platform.openai.com/) and sign in (or create an account).
+2. Open the API keys page: [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys).
+3. Click **Create new secret key** and name it for this app/environment.
+4. Copy the key right away (you will not be able to see the full key again later).
+5. Store it in your shell environment:
+   ```
+   export AI_PROVIDER="openai"
+   export OPENAI_API_KEY="sk-..."
+   ```
+6. Start Expo from the same terminal session so the app can read the environment variables:
+   ```
+   npm start
+   ```
+
 ## Gemini API setup and credentials
 
 If you want to use Gemini, follow these steps:
@@ -98,6 +116,17 @@ If you want to use Gemini, follow these steps:
 - **Manual testing**: Test camera permissions, API calls, and text-to-speech on different devices.
 
 ## Installation on iPhone
+
+### Apple Developer account (for production testing)
+
+If you want to install a production iOS build on physical devices (outside Expo Go), you typically need an Apple Developer Program membership.
+
+1. Go to [developer.apple.com/programs](https://developer.apple.com/programs/).
+2. Sign in with your Apple ID (or create one).
+3. Enroll in the Apple Developer Program (usually **$99/year** in the U.S.; pricing can vary by region).
+4. After enrollment is approved, use the same Apple account in Expo/EAS when prompted during iOS build credential setup.
+
+Without paid enrollment, you can still use Expo Go for development testing, but App Store/TestFlight distribution and broader device provisioning require the Developer Program.
 
 ### Option 1: Expo Go (recommended for testing)
 1. Install Expo Go on your iPhone.

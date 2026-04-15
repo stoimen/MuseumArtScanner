@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a1a2e">
+<title>Museum Art Scanner</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #1a1a2e;
+    color: #e0d6c2;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ---- Settings overlay ---- */
+  .settings-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: #1a1a2e;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 24px;
+    transition: opacity .3s;
+  }
+  .settings-overlay.hidden { display: none; }
+  .settings-overlay h1 { font-size: 24px; color: #f0e6d3; margin-bottom: 8px; }
+  .settings-overlay p { color: #c4b89a; font-size: 14px; text-align: center; margin-bottom: 24px; max-width: 340px; }
+  .settings-overlay label { display: block; font-size: 13px; color: #c4b89a; margin-bottom: 6px; text-align: left; width: 100%; max-width: 340px; }
+  .settings-overlay select,
+  .settings-overlay input {
+    width: 100%; max-width: 340px;
+    padding: 14px 16px; margin-bottom: 16px;
+    border: 1px solid #334155; border-radius: 12px;
+    background: #16213e; color: #e0d6c2; font-size: 16px;
+    outline: none;
+  }
+  .settings-overlay input::placeholder { color: #556677; }
+  .btn-start {
+    background: #c9a96e; color: #1a1a2e;
+    border: none; border-radius: 25px;
+    padding: 16px 48px; font-size: 17px; font-weight: 700;
+    cursor: pointer; margin-top: 8px; letter-spacing: .5px;
+  }
+  .btn-start:disabled { opacity: .5; }
+  .saved-note { font-size: 12px; color: #6b7b5e; margin-bottom: 12px; }
+
+  /* ---- Camera view ---- */
+  .camera-screen { position: relative; width: 100%; height: 100dvh; display: none; flex-direction: column; }
+  .camera-screen.active { display: flex; }
+  #videoFeed { width: 100%; height: 100%; object-fit: cover; background: #000; }
+  .cam-top-bar {
+    position: absolute; top: 0; left: 0; right: 0;
+    background: rgba(26,26,46,.65);
+    padding: 52px 16px 12px; text-align: center;
+  }
+  .cam-top-bar h2 { font-size: 18px; font-weight: 700; color: #f0e6d3; letter-spacing: 1px; }
+  .cam-bottom-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(26,26,46,.65);
+    padding: 16px 16px 40px; display: flex;
+    justify-content: center; gap: 12px;
+  }
+  .btn-capture {
+    background: #c9a96e; color: #1a1a2e;
+    border: none; border-radius: 30px;
+    padding: 16px 36px; font-size: 17px; font-weight: 700;
+    cursor: pointer; min-width: 170px; letter-spacing: .5px;
+  }
+  .btn-capture:disabled { opacity: .5; }
+  .btn-settings-small {
+    background: rgba(255,255,255,.12); color: #e0d6c2;
+    border: none; border-radius: 30px;
+    padding: 16px 20px; font-size: 15px; cursor: pointer;
+  }
+
+  /* ---- Result view ---- */
+  .result-screen { display: none; flex-direction: column; align-items: center; padding: 48px 16px 40px; min-height: 100dvh; }
+  .result-screen.active { display: flex; }
+  .result-screen img { width: 100%; max-width: 420px; border-radius: 12px; margin-bottom: 20px; }
+  .result-card {
+    background: #16213e; border-radius: 12px; padding: 20px;
+    width: 100%; max-width: 420px;
+    border-left: 4px solid #c9a96e;
+    white-space: pre-wrap; font-size: 15px; line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  .action-bar { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .btn-action {
+    border: none; border-radius: 25px;
+    padding: 14px 24px; font-size: 15px; font-weight: 600;
+    cursor: pointer; color: #fff; min-width: 130; text-align: center;
+  }
+  .btn-speak { background: #c9a96e; color: #1a1a2e; }
+  .btn-again { background: #334155; }
+
+  /* ---- Loading ---- */
+  .loading { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 16px; min-height: 100dvh; }
+  .loading.active { display: flex; }
+  .spinner { width: 48px; height: 48px; border: 4px solid #334155; border-top-color: #c9a96e; border-radius: 50%; animation: spin .8s linear infinite; margin-bottom: 20px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading p { color: #c4b89a; font-size: 16px; }
+
+  canvas { display: none; }
+</style>
+</head>
+<body>
+
+<!-- SETTINGS -->
+<div class="settings-overlay" id="settingsScreen">
+  <h1>Museum Art Scanner</h1>
+  <p>Point your camera at any painting and get instant AI-powered analysis.</p>
+  <label for="providerSelect">AI Provider</label>
+  <select id="providerSelect">
+    <option value="openai">OpenAI (GPT-4o mini)</option>
+    <option value="gemini">Google Gemini</option>
+  </select>
+  <label for="apiKeyInput">API Key</label>
+  <input type="password" id="apiKeyInput" placeholder="Paste your API key here">
+  <div class="saved-note" id="savedNote" style="display:none">Key saved from last session</div>
+  <button class="btn-start" id="btnStart" disabled>Start Scanning</button>
+</div>
+
+<!-- CAMERA -->
+<div class="camera-screen" id="cameraScreen">
+  <video id="videoFeed" autoplay playsinline muted></video>
+  <div class="cam-top-bar"><h2>Museum Art Scanner</h2></div>
+  <div class="cam-bottom-bar">
+    <button class="btn-settings-small" id="btnOpenSettings">Settings</button>
+    <button class="btn-capture" id="btnCapture">Scan Artwork</button>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading" id="loadingScreen">
+  <div class="spinner"></div>
+  <p id="loadingText">Analyzing artwork...</p>
+</div>
+
+<!-- RESULT -->
+<div class="result-screen" id="resultScreen">
+  <img id="resultImage" src="" alt="Captured artwork">
+  <div class="result-card" id="resultText"></div>
+  <div class="action-bar">
+    <button class="btn-action btn-speak" id="btnSpeak">Read Aloud</button>
+    <button class="btn-action btn-again" id="btnAgain">Scan Another</button>
+  </div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+// ---- Elements ----
+const settingsScreen = document.getElementById('settingsScreen');
+const cameraScreen   = document.getElementById('cameraScreen');
+const loadingScreen  = document.getElementById('loadingScreen');
+const resultScreen   = document.getElementById('resultScreen');
+const providerSelect = document.getElementById('providerSelect');
+const apiKeyInput    = document.getElementById('apiKeyInput');
+const btnStart       = document.getElementById('btnStart');
+const savedNote      = document.getElementById('savedNote');
+const videoFeed      = document.getElementById('videoFeed');
+const btnCapture     = document.getElementById('btnCapture');
+const btnOpenSettings= document.getElementById('btnOpenSettings');
+const loadingText    = document.getElementById('loadingText');
+const resultImage    = document.getElementById('resultImage');
+const resultText     = document.getElementById('resultText');
+const btnSpeak       = document.getElementById('btnSpeak');
+const btnAgain       = document.getElementById('btnAgain');
+const canvas         = document.getElementById('canvas');
+
+let stream = null;
+let speaking = false;
+
+const PROMPT = `You are an expert museum guide and art historian.
+
+Analyze the painting in the image and return your answer in clear sections using the exact headings below:
+
+1) Artwork Snapshot
+- Title (or "Unknown")
+- Artist (or "Unknown")
+- Date/Period
+- Medium/Style
+
+2) What You See
+- Brief visual description in 2-4 sentences.
+
+3) Attribution Confidence
+- Confidence level: High / Medium / Low
+- Evidence for attribution (style, technique, subject, provenance clues)
+- If uncertain, explicitly say what is unknown.
+
+4) Historical Context
+- 3-5 concise bullet points with historical/art-movement context.
+
+5) Interesting Fact for Visitors
+- One short, memorable fact suitable for audio narration.
+
+Rules:
+- Do not invent facts. If unsure, say "Unknown" and explain uncertainty.
+- Distinguish clearly between observation and inference.
+- Keep total response under 220 words.
+- Use visitor-friendly language for a general audience.`;
+
+// ---- Persist settings ----
+function loadSettings() {
+  const p = localStorage.getItem('mas_provider');
+  const k = localStorage.getItem('mas_key');
+  if (p) providerSelect.value = p;
+  if (k) { apiKeyInput.value = k; savedNote.style.display = 'block'; }
+  validateStart();
+}
+function saveSettings() {
+  localStorage.setItem('mas_provider', providerSelect.value);
+  localStorage.setItem('mas_key', apiKeyInput.value.trim());
+}
+function validateStart() { btnStart.disabled = !apiKeyInput.value.trim(); }
+apiKeyInput.addEventListener('input', validateStart);
+loadSettings();
+
+// ---- Screen navigation ----
+function show(screen) {
+  [settingsScreen, cameraScreen, loadingScreen, resultScreen].forEach(s => s.classList.remove('active'));
+  settingsScreen.classList.add('hidden');
+  if (screen === settingsScreen) { settingsScreen.classList.remove('hidden'); }
+  else { screen.classList.add('active'); }
+}
+
+// ---- Camera ----
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false
+    });
+    videoFeed.srcObject = stream;
+  } catch (e) {
+    alert('Camera access is required. Please allow camera access and reload.');
+  }
+}
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+}
+
+function capturePhoto() {
+  const ctx = canvas.getContext('2d');
+  canvas.width = videoFeed.videoWidth;
+  canvas.height = videoFeed.videoHeight;
+  ctx.drawImage(videoFeed, 0, 0);
+  return canvas.toDataURL('image/jpeg', 0.7);
+}
+
+// ---- AI Analysis ----
+async function analyzeWithOpenAI(base64DataUrl, apiKey) {
+  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: PROMPT },
+          { type: 'image_url', image_url: { url: base64DataUrl } }
+        ]
+      }],
+      max_tokens: 500
+    })
+  });
+  if (!resp.ok) { const e = await resp.json().catch(() => ({})); throw new Error(e.error?.message || `OpenAI error ${resp.status}`); }
+  const data = await resp.json();
+  return data.choices?.[0]?.message?.content || 'No analysis returned.';
+}
+
+async function analyzeWithGemini(base64DataUrl, apiKey) {
+  const base64 = base64DataUrl.split(',')[1];
+  const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [
+        { text: PROMPT },
+        { inlineData: { mimeType: 'image/jpeg', data: base64 } }
+      ]}]
+    })
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error?.message || `Gemini error ${resp.status}`);
+  if (data.promptFeedback?.blockReason) throw new Error(`Blocked: ${data.promptFeedback.blockReason}`);
+  const text = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('').trim();
+  if (!text) throw new Error('No analysis returned.');
+  return text;
+}
+
+async function analyze(base64DataUrl) {
+  const provider = localStorage.getItem('mas_provider') || 'openai';
+  const apiKey = localStorage.getItem('mas_key') || '';
+  if (provider === 'gemini') return analyzeWithGemini(base64DataUrl, apiKey);
+  return analyzeWithOpenAI(base64DataUrl, apiKey);
+}
+
+// ---- TTS ----
+function toggleSpeak(text) {
+  if (speaking) {
+    speechSynthesis.cancel();
+    speaking = false;
+    btnSpeak.textContent = 'Read Aloud';
+    return;
+  }
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 0.9;
+  utter.onend = () => { speaking = false; btnSpeak.textContent = 'Read Aloud'; };
+  speechSynthesis.speak(utter);
+  speaking = true;
+  btnSpeak.textContent = 'Stop Reading';
+}
+
+// ---- Event wiring ----
+btnStart.addEventListener('click', async () => {
+  saveSettings();
+  await startCamera();
+  show(cameraScreen);
+});
+
+btnOpenSettings.addEventListener('click', () => {
+  stopCamera();
+  show(settingsScreen);
+});
+
+btnCapture.addEventListener('click', async () => {
+  btnCapture.disabled = true;
+  const dataUrl = capturePhoto();
+  loadingText.textContent = 'Analyzing artwork...';
+  show(loadingScreen);
+  stopCamera();
+
+  try {
+    const result = await analyze(dataUrl);
+    resultImage.src = dataUrl;
+    resultText.textContent = result;
+    show(resultScreen);
+  } catch (e) {
+    alert('Analysis failed: ' + e.message);
+    await startCamera();
+    show(cameraScreen);
+  } finally {
+    btnCapture.disabled = false;
+  }
+});
+
+btnSpeak.addEventListener('click', () => {
+  toggleSpeak(resultText.textContent);
+});
+
+btnAgain.addEventListener('click', async () => {
+  speechSynthesis.cancel();
+  speaking = false;
+  btnSpeak.textContent = 'Read Aloud';
+  await startCamera();
+  show(cameraScreen);
+});
+</script>
+</body>
+</html>

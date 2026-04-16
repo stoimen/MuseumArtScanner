@@ -1,33 +1,43 @@
 {
   "expo": {
-    "name": "MuseumArtScanner",
+    "name": "Museum Art Scanner",
     "slug": "MuseumArtScanner",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1a1a2e"
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.museumartscanner.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "This app needs camera access to scan paintings."
+        "NSCameraUsageDescription": "This app needs camera access to scan and identify paintings in museums."
       }
     },
     "android": {
+      "package": "com.museumartscanner.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#1a1a2e"
       },
       "permissions": ["android.permission.CAMERA"],
       "edgeToEdgeEnabled": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Museum Art Scanner to use your camera to scan artwork."
+        }
+      ]
+    ]
   }
 }

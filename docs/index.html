@@ -19,7 +19,6 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* ---- Key prompt (minimal overlay) ---- */
   .key-prompt {
     position: fixed; inset: 0; z-index: 200;
     background: rgba(26,26,46,.95);
@@ -47,7 +46,6 @@
   }
   .key-prompt .btn-save:disabled { opacity: .4; }
 
-  /* ---- Camera view ---- */
   .camera-screen { position: relative; width: 100%; height: 100dvh; display: none; flex-direction: column; }
   .camera-screen.active { display: flex; }
   #videoFeed { width: 100%; height: 100%; object-fit: cover; background: #000; }
@@ -71,7 +69,6 @@
   }
   .btn-capture:disabled { opacity: .5; }
 
-  /* ---- Result view ---- */
   .result-screen { display: none; flex-direction: column; align-items: center; padding: 48px 16px 40px; min-height: 100dvh; }
   .result-screen.active { display: flex; }
   .result-screen img { width: 100%; max-width: 420px; border-radius: 12px; margin-bottom: 20px; }
@@ -91,7 +88,6 @@
   .btn-speak { background: #c9a96e; color: #1a1a2e; }
   .btn-again { background: #334155; }
 
-  /* ---- Loading ---- */
   .loading { display: none; flex-direction: column; align-items: center; justify-content: center; padding: 40px 16px; min-height: 100dvh; }
   .loading.active { display: flex; }
   .spinner { width: 48px; height: 48px; border: 4px solid #334155; border-top-color: #c9a96e; border-radius: 50%; animation: spin .8s linear infinite; margin-bottom: 20px; }
@@ -103,7 +99,6 @@
 </head>
 <body>
 
-<!-- MINIMAL KEY PROMPT (only shown once if no key saved) -->
 <div class="key-prompt hidden" id="keyPrompt">
   <h1>Museum Art Scanner</h1>
   <p class="subtitle">
@@ -114,7 +109,6 @@
   <button class="btn-save" id="btnSaveKey" disabled>Start Scanning</button>
 </div>
 
-<!-- CAMERA (default screen) -->
 <div class="camera-screen" id="cameraScreen">
   <video id="videoFeed" autoplay playsinline muted></video>
   <div class="cam-top-bar"><h2>Museum Art Scanner</h2></div>
@@ -123,13 +117,11 @@
   </div>
 </div>
 
-<!-- LOADING -->
 <div class="loading" id="loadingScreen">
   <div class="spinner"></div>
   <p id="loadingText">Analyzing artwork...</p>
 </div>
 
-<!-- RESULT -->
 <div class="result-screen" id="resultScreen">
   <img id="resultImage" src="" alt="Captured artwork">
   <div class="result-card" id="resultText"></div>
@@ -190,7 +182,6 @@ Rules:
 - Keep total response under 220 words.
 - Use visitor-friendly language for a general audience.`;
 
-// ---- Helpers ----
 function getKey() { return (localStorage.getItem('mas_key') || '').trim(); }
 function saveKey(k) { localStorage.setItem('mas_key', k.trim()); }
 
@@ -201,7 +192,6 @@ function show(screen) {
   else { screen.classList.add('active'); }
 }
 
-// ---- Camera ----
 async function startCamera() {
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -225,11 +215,10 @@ function capturePhoto() {
   return canvas.toDataURL('image/jpeg', 0.7);
 }
 
-// ---- Gemini Analysis (free tier) ----
 async function analyze(base64DataUrl) {
   const apiKey = getKey();
   const base64 = base64DataUrl.split(',')[1];
-  const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+  const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -253,7 +242,6 @@ async function analyze(base64DataUrl) {
   return text;
 }
 
-// ---- TTS ----
 function toggleSpeak(text) {
   if (speaking) {
     speechSynthesis.cancel();
@@ -269,7 +257,6 @@ function toggleSpeak(text) {
   btnSpeak.textContent = 'Stop Reading';
 }
 
-// ---- Key prompt ----
 apiKeyInput.addEventListener('input', () => { btnSaveKey.disabled = !apiKeyInput.value.trim(); });
 btnSaveKey.addEventListener('click', async () => {
   saveKey(apiKeyInput.value);
@@ -277,7 +264,6 @@ btnSaveKey.addEventListener('click', async () => {
   show(cameraScreen);
 });
 
-// ---- Capture ----
 btnCapture.addEventListener('click', async () => {
   btnCapture.disabled = true;
   const dataUrl = capturePhoto();
@@ -298,7 +284,6 @@ btnCapture.addEventListener('click', async () => {
   }
 });
 
-// ---- Result actions ----
 btnSpeak.addEventListener('click', () => { toggleSpeak(resultText.textContent); });
 
 btnAgain.addEventListener('click', async () => {
@@ -309,7 +294,6 @@ btnAgain.addEventListener('click', async () => {
   show(cameraScreen);
 });
 
-// ---- Boot: camera first, key prompt only if needed ----
 (async () => {
   if (getKey()) {
     await startCamera();

@@ -117,6 +117,7 @@
   <p>Point your camera at any painting and get instant AI-powered analysis.</p>
   <label for="providerSelect">AI Provider</label>
   <select id="providerSelect">
+    <option value="claude">Claude (Anthropic)</option>
     <option value="openai">OpenAI (GPT-4o mini)</option>
     <option value="gemini">Google Gemini</option>
   </select>
@@ -256,6 +257,35 @@ function capturePhoto() {
 }
 
 // ---- AI Analysis ----
+async function analyzeWithClaude(base64DataUrl, apiKey) {
+  const base64 = base64DataUrl.split(',')[1];
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
+          { type: 'text', text: PROMPT }
+        ]
+      }]
+    })
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error?.message || `Claude error ${resp.status}`);
+  const text = data.content?.map(b => b.text || '').join('').trim();
+  if (!text) throw new Error('No analysis returned.');
+  return text;
+}
+
 async function analyzeWithOpenAI(base64DataUrl, apiKey) {
   const resp = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -298,8 +328,9 @@ async function analyzeWithGemini(base64DataUrl, apiKey) {
 }
 
 async function analyze(base64DataUrl) {
-  const provider = localStorage.getItem('mas_provider') || 'openai';
+  const provider = localStorage.getItem('mas_provider') || 'claude';
   const apiKey = localStorage.getItem('mas_key') || '';
+  if (provider === 'claude') return analyzeWithClaude(base64DataUrl, apiKey);
   if (provider === 'gemini') return analyzeWithGemini(base64DataUrl, apiKey);
   return analyzeWithOpenAI(base64DataUrl, apiKey);
 }

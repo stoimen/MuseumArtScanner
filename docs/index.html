@@ -215,11 +215,10 @@ function capturePhoto() {
   return canvas.toDataURL('image/jpeg', 0.7);
 }
 
-// Models to try in order (most generous free tier first)
 const MODELS = [
-  'gemini-2.5-flash-lite-preview-06-17',
-  'gemini-2.5-flash-preview-04-17',
-  'gemini-2.0-flash'
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-flash',
+  'gemini-2.5-pro'
 ];
 
 async function tryModel(model, base64, apiKey) {
@@ -254,13 +253,13 @@ async function analyze(base64DataUrl) {
         localStorage.removeItem('mas_key');
         throw new Error('Invalid API key. Please re-enter your key.');
       }
-      if (e.status === 404 || (e.status === 429 && e.data?.error?.message?.includes('limit: 0'))) {
+      if (e.status === 404 || e.status === 429 || (e.data?.error?.message?.includes('no longer available'))) {
         continue;
       }
-      throw new Error(e.data?.error?.message || e.message || `Gemini error`);
+      throw new Error(e.data?.error?.message || e.message || 'Gemini error');
     }
   }
-  throw new Error(lastError?.data?.error?.message || 'All models exhausted. Please try again later.');
+  throw new Error(lastError?.data?.error?.message || 'All models failed. Please try again later.');
 }
 
 function toggleSpeak(text) {

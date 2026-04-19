@@ -44,7 +44,12 @@
     padding: 14px 44px; font-size: 16px; font-weight: 700;
     cursor: pointer; letter-spacing: .5px;
   }
-  .key-prompt .btn-save:disabled { opacity: .4; }
+  .key-prompt .btn-save:disabled { opacity: .4; cursor: not-allowed; }
+  .key-prompt .key-error {
+    color: #f28b82; font-size: 13px; margin-top: 14px;
+    max-width: 320px; text-align: center; line-height: 1.4;
+    min-height: 18px;
+  }
 
   .camera-screen { position: relative; width: 100%; height: 100dvh; display: none; flex-direction: column; }
   .camera-screen.active { display: flex; }
@@ -107,6 +112,7 @@
   </p>
   <input type="password" id="apiKeyInput" placeholder="AIza...">
   <button class="btn-save" id="btnSaveKey" disabled>Start Scanning</button>
+  <p class="key-error" id="keyError"></p>
 </div>
 
 <div class="camera-screen" id="cameraScreen">
@@ -148,6 +154,7 @@ const resultText    = document.getElementById('resultText');
 const btnSpeak      = document.getElementById('btnSpeak');
 const btnAgain      = document.getElementById('btnAgain');
 const canvas        = document.getElementById('canvas');
+const keyError      = document.getElementById('keyError');
 
 let stream = null;
 let speaking = false;
@@ -221,8 +228,26 @@ const MODELS = [
   'gemini-2.5-pro'
 ];
 
+// Status codes that mean "this model can't serve the request right now, but
+// the API key itself is fine" — safe to roll over to the next model.
+const RETRYABLE_STATUSES = new Set([403, 404, 429, 500, 502, 503, 504]);
+
+function isInvalidKeyError(status, message) {
+  if (status !== 400 && status !== 401 && status !== 403) return false;
+  const m = (message || '').toLowerCase();
+  // Gemini uses these exact phrases for auth failures; matching just "API key"
+  // was too loose and nuked valid keys on unrelated 400s.
+  return (
+    m.includes('api key not valid') ||
+    m.includes('api_key_invalid') ||
+    m.includes('api key expired') ||
+    m.includes('pass a valid api key') ||
+    m.includes('permission_denied') && m.includes('api key')
+  );
+}
+
 async function tryModel(model, base64, apiKey) {
-  const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+  const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -232,8 +257,8 @@ async function tryModel(model, base64, apiKey) {
       ]}]
     })
   });
-  const data = await resp.json();
-  if (!resp.ok) throw { status: resp.status, data };
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw { status: resp.status, data, message: data?.error?.message };
   if (data.promptFeedback?.blockReason) throw new Error(`Blocked: ${data.promptFeedback.blockReason}`);
   const text = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('').trim();
   if (!text) throw new Error('No analysis returned.');
@@ -249,17 +274,37 @@ async function analyze(base64DataUrl) {
       return await tryModel(model, base64, apiKey);
     } catch (e) {
       lastError = e;
-      if (e.status === 400 && e.data?.error?.message?.includes('API key')) {
+      console.warn(`[mas] ${model} failed:`, e);
+      const message = e?.data?.error?.message || e?.message || '';
+      if (isInvalidKeyError(e?.status, message)) {
         localStorage.removeItem('mas_key');
         throw new Error('Invalid API key. Please re-enter your key.');
       }
-      if (e.status === 404 || e.status === 429 || (e.data?.error?.message?.includes('no longer available'))) {
+      if (RETRYABLE_STATUSES.has(e?.status) || /no longer available|overloaded|unavailable/i.test(message)) {
         continue;
       }
-      throw new Error(e.data?.error?.message || e.message || 'Gemini error');
+      // Non-status errors (network failures, empty responses) — also try next model.
+      if (!e?.status) continue;
+      throw new Error(message || `Gemini error (${e.status})`);
     }
   }
-  throw new Error(lastError?.data?.error?.message || 'All models failed. Please try again later.');
+  const msg = lastError?.data?.error?.message || lastError?.message;
+  const status = lastError?.status ? ` (HTTP ${lastError.status})` : '';
+  throw new Error(`All Gemini models failed${status}. ${msg || 'Please try again later.'}`);
+}
+
+async function validateApiKey(apiKey) {
+  // Cheap auth check: listing models only fails for bad keys, not quota.
+  const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}&pageSize=1`);
+  if (resp.ok) return { ok: true };
+  const data = await resp.json().catch(() => ({}));
+  const message = data?.error?.message || `HTTP ${resp.status}`;
+  if (isInvalidKeyError(resp.status, message)) {
+    return { ok: false, message: 'That key was rejected by Google. Double-check you copied the full key from Google AI Studio.' };
+  }
+  // Other errors (network, quota on the listing endpoint) shouldn't block the user.
+  console.warn('[mas] key validation returned non-auth error, continuing:', message);
+  return { ok: true };
 }
 
 function toggleSpeak(text) {
@@ -277,11 +322,36 @@ function toggleSpeak(text) {
   btnSpeak.textContent = 'Stop Reading';
 }
 
-apiKeyInput.addEventListener('input', () => { btnSaveKey.disabled = !apiKeyInput.value.trim(); });
+apiKeyInput.addEventListener('input', () => {
+  btnSaveKey.disabled = !apiKeyInput.value.trim();
+  keyError.textContent = '';
+});
 btnSaveKey.addEventListener('click', async () => {
-  saveKey(apiKeyInput.value);
-  await startCamera();
-  show(cameraScreen);
+  const key = apiKeyInput.value.trim();
+  if (!key) return;
+  btnSaveKey.disabled = true;
+  const originalLabel = btnSaveKey.textContent;
+  btnSaveKey.textContent = 'Checking key…';
+  keyError.textContent = '';
+  try {
+    const result = await validateApiKey(key);
+    if (!result.ok) {
+      keyError.textContent = result.message;
+      return;
+    }
+    saveKey(key);
+    await startCamera();
+    show(cameraScreen);
+  } catch (e) {
+    console.warn('[mas] key validation threw:', e);
+    // Network failure — let the user proceed; analyze() will surface the real error.
+    saveKey(key);
+    await startCamera();
+    show(cameraScreen);
+  } finally {
+    btnSaveKey.textContent = originalLabel;
+    btnSaveKey.disabled = !apiKeyInput.value.trim();
+  }
 });
 
 btnCapture.addEventListener('click', async () => {
